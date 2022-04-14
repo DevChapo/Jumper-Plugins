@@ -242,7 +242,7 @@ class Blackjack:
         dc = deck.bj_count(dh)
         pc = deck.bj_count(ph)
 
-        if dc > 21 >= pc or dc < pc <= 21:
+        if pc == 21 or dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
         elif pc > 21:
