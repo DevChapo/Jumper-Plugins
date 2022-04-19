@@ -77,7 +77,7 @@ class Core:
         await asyncio.sleep(2)
         outcome = random.choice((_("heads"), _("tails")))
         msg = _("The coin landed on {}!").format(outcome)
-        return choice.lower() in outcome, bet, msg, message
+        return choice.lower() in outcome, bet, msg, message, 0, None
 
     @game_engine("Cups", ("1", "2", "3"))
     async def play_cups(self, ctx, bet, choice):
@@ -85,7 +85,7 @@ class Core:
         await asyncio.sleep(3)
         outcome = random.randint(1, 3)
         msg = _("The coin was under cup {}!").format(outcome)
-        return int(choice) == outcome, bet, msg, message
+        return int(choice) == outcome, bet, msg, message, 0, None
 
     @game_engine("Dice")
     async def play_dice(self, ctx, bet):
@@ -95,7 +95,7 @@ class Core:
         outcome = die_one + die_two
 
         msg = _("The dice landed on {} and {} ({}).").format(die_one, die_two, outcome)
-        return outcome in (2, 7, 11, 12), bet, msg, message
+        return outcome in (2, 7, 11, 12), bet, msg, message, 0, None
 
     @game_engine("Hilo", (_("low"), _("lo"), _("high"), _("hi"), _("seven"), _("7")))
     async def play_hilo(self, ctx, bet, choice):
@@ -115,7 +115,7 @@ class Core:
         if result == 7 and outcome[1] == "7":
             bet *= 5
 
-        return choice.lower() in outcome, bet, msg, message
+        return choice.lower() in outcome, bet, msg, message, 0, None
 
     @game_engine(name="Craps")
     async def play_craps(self, ctx, bet):
@@ -249,11 +249,11 @@ class Blackjack:
         suite_count = Counter([card[0] for card in ph])
 
         if list(num_count.values()).count(4):
-             special_multiplier += 1
-             multiplier_messages.append('+100% payout for quads!')
+             special_multiplier += 0.2
+             multiplier_messages.append('+20% payout for quads!')
         elif list(num_count.values()).count(3):
-             special_multiplier += 0.5
-             multiplier_messages.append('+50% payout for trips!')
+             special_multiplier += 0.1
+             multiplier_messages.append('+10% payout for trips!')
 
        # if list(suite_count.values()).count(5):
        #      special_multiplier += .3
@@ -265,12 +265,12 @@ class Blackjack:
        #      special_multiplier += .1
        #      multiplier_messages.append('+10% payout for 3 of a kind!')
 
-        if pc == 21:
-            special_multiplier += .1
-            multiplier_messages.append('+10% payout for blackjack!')
-            outcome = _("Winner!")
-            result = True
-        elif dc > 21 >= pc or dc < pc <= 21:
+       # if pc == 21:
+       #     special_multiplier += .1
+       #     multiplier_messages.append('+10% payout for blackjack!')
+       #     outcome = _("Winner!")
+       #     result = True
+        if dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
         elif pc > 21:
@@ -435,14 +435,14 @@ class War:
         )
         if outcome == "Win":
             msg += _("**Result**: Winner")
-            return True, amount, msg, message
+            return True, amount, msg, message, 0, None
 
         elif outcome == "Loss":
             msg += _("**Result**: Loser")
-            return False, amount, msg, message
+            return False, amount, msg, message, 0, None
         else:
             msg += _("**Result**: Surrendered")
-            return False, amount, msg, message
+            return False, amount, msg, message, 0, None
 
     @staticmethod
     def get_count(pc, dc):
@@ -512,7 +512,7 @@ class Double:
             outcome = _("You Lost It All!")
             result = False
         embed = self.double_embed(ctx, count, amount, outcome=outcome)
-        return result, amount, embed, message
+        return result, amount, embed, message, 0, None
 
     @staticmethod
     def double_embed(ctx, count, amount, outcome=None):
