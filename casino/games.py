@@ -1,6 +1,7 @@
 # Standard Library
 import asyncio
 import random
+from collections import Counter
 
 # Casino
 from .deck import Deck
@@ -68,7 +69,7 @@ class Core:
             bet *= multiplier
         else:
             msg = _("Nothing happens. You stare at the machine contemplating your decision.")
-        return outcome == 0, bet, msg, message
+        return outcome == 0, bet, msg, message, 0, None
 
     @game_engine("Coin", (_("heads"), _("tails")))
     async def play_coin(self, ctx, bet, choice):
@@ -242,7 +243,34 @@ class Blackjack:
         dc = deck.bj_count(dh)
         pc = deck.bj_count(ph)
 
-        if pc == 21 or dc > 21 >= pc or dc < pc <= 21:
+        special_multiplier = 0
+        multiplier_messages = []
+        num_count = Counter([card[1] for card in ph])
+        suite_count = Counter([card[0] for card in ph])
+
+        if list(num_count.values()).count(4):
+             special_multiplier += 1
+             multiplier_messages.append('+100% payout for quads!')
+        elif list(num_count.values()).count(3):
+             special_multiplier += 0.5
+             multiplier_messages.append('+50% payout for trips!')
+
+       # if list(suite_count.values()).count(5):
+       #      special_multiplier += .3
+       #      multiplier_messages.append('+30% payout for 5 of a kind!')
+       # elif list(suite_count.values()).count(4):
+       #      special_multiplier += .2
+       #      multiplier_messages.append('+20% payout for 4 of a kind!')
+       # elif list(suite_count.values()).count(3):
+       #      special_multiplier += .1
+       #      multiplier_messages.append('+10% payout for 3 of a kind!')
+
+        if pc == 21:
+            special_multiplier += .1
+            multiplier_messages.append('+10% payout for blackjack!')
+            outcome = _("Winner!")
+            result = True
+        elif dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
         elif pc > 21:
@@ -259,7 +287,8 @@ class Blackjack:
             outcome = _("House Wins!")
             result = False
         embed = self.bj_embed(ctx, ph, dh, pc, outcome=outcome)
-        return result, amount, embed, message
+        multiplier_messages = '\n'.join(multiplier_messages) if len(multiplier_messages) else None
+        return result, amount, embed, message, special_multiplier, multiplier_messages
 
     async def bj_loop(self, ctx, ph, dh, count, condition2, message: discord.Message):
         while count < 21:

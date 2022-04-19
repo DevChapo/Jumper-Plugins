@@ -192,10 +192,11 @@ class GameEngine(Database):
         settings = await data.all()
         message_obj: Optional[discord.Message]
 
-        win, amount, msg, message_obj = result
+        win, amount, msg, message_obj, special_win_pct, special_win_msg = result
+        special_win_pct += 0.15 if 961394139482710027 in [x.id for x in self.player.roles] else 0  # Upper Class role
 
         if not win:
-            embed = await self.build_embed(msg, settings, win, total=amount, bonus="(+0)")
+            embed = await self.build_embed(msg, settings, win, total=amount, bonus="(+0)", special_win_msg=special_win_msg)
             if (not await self.old_message_cache.get_guild(self.ctx.guild)) and message_obj:
                 return await message_obj.edit(content=self.player.mention, embed=embed)
             else:
@@ -204,7 +205,7 @@ class GameEngine(Database):
         player_data = await super().get_data(self.ctx, player=self.player)
         await self.update_stats(stat="Won")
         if self.limit_check(settings, amount):
-            embed = await self.build_embed(msg, settings, win, total=amount, bonus="(+0)")
+            embed = await self.build_embed(msg, settings, win, total=amount, bonus="(+0)", special_win_msg=special_win_msg)
             return await self.limit_handler(
                 embed,
                 amount,
@@ -213,8 +214,8 @@ class GameEngine(Database):
                 message=message_obj,
             )
 
-        total, bonus = await self.deposit_winnings(amount, player_data, settings)
-        embed = await self.build_embed(msg, settings, win, total=total, bonus=bonus)
+        total, bonus = await self.deposit_winnings(amount, player_data, settings, special_win_pct)
+        embed = await self.build_embed(msg, settings, win, total=total, bonus=bonus, special_win_msg=special_win_msg)
         if (not await self.old_message_cache.get_guild(self.ctx.guild)) and message_obj:
             return await message_obj.edit(content=self.player.mention, embed=embed)
         else:
@@ -238,7 +239,7 @@ class GameEngine(Database):
 
         await self.player.send(msg)
 
-    async def deposit_winnings(self, amount, player_instance, settings):
+    async def deposit_winnings(self, amount, player_instance, settings, special_multiplier):
         multiplier = settings["Games"][self.game]["Multiplier"]
         if self.game == "Allin" or self.game == "Double":
             try:
@@ -248,7 +249,7 @@ class GameEngine(Database):
                 return await bank.set_balance(self.player, e.max_balance), "(+0)"
 
         initial = round(amount * multiplier)
-        total, amt, msg = await self.calculate_bonus(initial, player_instance, settings)
+        total, amt, msg = await self.calculate_bonus(initial, player_instance, settings, special_multiplier)
         try:
             await bank.deposit_credits(self.player, total)
         except BalanceTooHigh as e:
@@ -264,7 +265,7 @@ class GameEngine(Database):
         else:
             return False
 
-    async def build_embed(self, msg, settings, win, total, bonus):
+    async def build_embed(self, msg, settings, win, total, bonus, special_win_msg=None):
         balance = await bank.get_balance(self.player)
         currency = await bank.get_currency_name(self.guild)
         bal_msg = _("**Remaining Balance:** {} {}").format(humanize_number(balance), currency)
@@ -279,8 +280,12 @@ class GameEngine(Database):
 
         if win:
             embed.colour = 0x00FF00
-            end = _("Congratulations, you just won {} {} {}!\n{}").format(
-                humanize_number(total), currency, bonus, bal_msg
+            end = _("Congratulations, you just won {} {} {}!\n{}{}").format(
+                    humanize_number(total),
+                    currency,
+                    bonus,
+                    '' if special_win_msg is None else f"{special_win_msg}\n",
+                    bal_msg
             )
         else:
             embed.colour = 0xFF0000
@@ -301,15 +306,15 @@ class GameEngine(Database):
             return access
 
     @staticmethod
-    async def calculate_bonus(amount, player_instance, settings):
+    async def calculate_bonus(amount, player_instance, settings, special_multiplier):
         membership = await player_instance.Membership.Name()
         try:
             bonus_multiplier = settings["Memberships"][membership]["Bonus"]
         except KeyError:
             bonus_multiplier = 1
-        total = round(amount * bonus_multiplier)
+        total = round(amount * bonus_multiplier) + round(amount * special_multiplier)
         bonus = total - amount
-        return total, amount, "(+{})".format(humanize_number(bonus) if bonus_multiplier > 1 else 0)
+        return total, amount, "(+{})".format(humanize_number(bonus) if bonus_multiplier > 1 or special_multiplier else 0)
 
     @staticmethod
     def limit_check(settings, amount):
