@@ -265,12 +265,13 @@ class Blackjack:
         #     special_multiplier += .1
         #     multiplier_messages.append('+10% payout for 3 of a kind!')
 
-        # if pc == 21:
-        #     special_multiplier += .1
-        #     multiplier_messages.append('+10% payout for blackjack!')
-        #     outcome = _("Winner!")
-        #     result = True
-        if dc > 21 >= pc or dc < pc <= 21:
+
+        if pc == 21 and dc != 21:
+            special_multiplier += .1
+            multiplier_messages.append('+10% payout for blackjack!')
+            outcome = _("Winner!")
+            result = True
+        elif dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
         elif pc > 21:
