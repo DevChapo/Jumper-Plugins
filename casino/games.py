@@ -246,7 +246,6 @@ class Blackjack:
         special_multiplier = 0
         multiplier_messages = []
         num_count = Counter([card[1] for card in ph])
-        suite_count = Counter([card[0] for card in ph])
 
         if list(num_count.values()).count(4):
             special_multiplier += 0.2
@@ -255,22 +254,23 @@ class Blackjack:
             special_multiplier += 0.1
             multiplier_messages.append('+10% payout for trips!')
 
-        if list(suite_count.values()).count(5):
-            special_multiplier += .3
-            multiplier_messages.append('+30% payout for 5 of a kind!')
-        elif list(suite_count.values()).count(4):
-            special_multiplier += .2
-            multiplier_messages.append('+20% payout for 4 of a kind!')
-        elif list(suite_count.values()).count(3):
-            special_multiplier += .1
-            multiplier_messages.append('+10% payout for 3 of a kind!')
+        # suite_count = Counter([card[0] for card in ph])
+        # if list(suite_count.values()).count(5):
+        #     special_multiplier += .3
+        #     multiplier_messages.append('+30% payout for 5 of a kind!')
+        # elif list(suite_count.values()).count(4):
+        #     special_multiplier += .2
+        #     multiplier_messages.append('+20% payout for 4 of a kind!')
+        # elif list(suite_count.values()).count(3):
+        #     special_multiplier += .1
+        #     multiplier_messages.append('+10% payout for 3 of a kind!')
 
-        if pc == 21:
-            special_multiplier += .1
-            multiplier_messages.append('+10% payout for blackjack!')
-            outcome = _("Winner!")
-            result = True
-        elif dc > 21 >= pc or dc < pc <= 21:
+        # if pc == 21:
+        #     special_multiplier += .1
+        #     multiplier_messages.append('+10% payout for blackjack!')
+        #     outcome = _("Winner!")
+        #     result = True
+        if dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
         elif pc > 21:
