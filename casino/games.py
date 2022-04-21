@@ -178,7 +178,7 @@ class Blackjack:
 
     @game_engine(name="Blackjack")
     async def mock(self, ctx, bet, ph, dh):
-        result = await self.blackjack_results(ctx, bet, ph, dh)
+        result = await self.blackjack_results(ctx, bet, ph, dh, message=None)
         return result
 
     async def blackjack_game(self, ctx, amount):
@@ -247,6 +247,7 @@ class Blackjack:
         multiplier_messages = []
         num_count = Counter([card[1] for card in ph])
 
+        # Providing bonus for triple or quad card hand
         if list(num_count.values()).count(4):
             special_multiplier += 0.2
             multiplier_messages.append('+20% payout for quads!')
@@ -254,29 +255,29 @@ class Blackjack:
             special_multiplier += 0.1
             multiplier_messages.append('+10% payout for trips!')
 
-        # suite_count = Counter([card[0] for card in ph])
-        # if list(suite_count.values()).count(5):
-        #     special_multiplier += .3
-        #     multiplier_messages.append('+30% payout for 5 of a kind!')
-        # elif list(suite_count.values()).count(4):
-        #     special_multiplier += .2
-        #     multiplier_messages.append('+20% payout for 4 of a kind!')
-        # elif list(suite_count.values()).count(3):
-        #     special_multiplier += .1
-        #     multiplier_messages.append('+10% payout for 3 of a kind!')
-
-
+        # Providing bonuses for 5+ player hands
+        if len(ph) >= 6:
+            special_multiplier += 0.2
+            multiplier_messages.append("+20% payout for hand of six or more!")
+        elif len(ph) >= 5:
+            special_multiplier += 0.1
+            multiplier_messages.append("+10% payout for hand of five!")
+        
+        # Providing bonus for blackjack win
         if pc == 21 and dc != 21:
             special_multiplier += .1
             multiplier_messages.append('+10% payout for blackjack!')
             outcome = _("Winner!")
             result = True
+        # Standard win
         elif dc > 21 >= pc or dc < pc <= 21:
             outcome = _("Winner!")
             result = True
+        # Bust
         elif pc > 21:
             outcome = _("BUST!")
             result = False
+        # Push
         elif dc == pc <= 21:
             outcome = _("Pushed")
             try:
